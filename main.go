@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"bidder/router"
+	"bidder/util"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+	defer func() { util.DBConnect.Close() }()
+
+	log.Println("Welcome to the Bidder app!")
+
+	r := router.New()
+	r.Run()
 }

@@ -9,6 +9,7 @@ import (
 func init() {
 	prepareDotEnv()
 	configureDatabase()
+	migrateDatabase()
 }
 
 func prepareDotEnv() {

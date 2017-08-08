@@ -72,10 +72,11 @@ func (p *Player) Take() error {
 	}
 
 	if currentPoints-p.Points < 0 {
-		_, err = stmt.Exec(0, p.PlayerID)
-	} else {
-		_, err = stmt.Exec(currentPoints-p.Points, p.PlayerID)
+		tx.Rollback()
+		return errors.New("Can't set points number to negative")
 	}
+
+	_, err = stmt.Exec(currentPoints-p.Points, p.PlayerID)
 	if err != nil {
 		tx.Rollback()
 		return err

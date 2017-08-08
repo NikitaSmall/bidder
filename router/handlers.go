@@ -2,6 +2,7 @@ package router
 
 import (
 	"bidder/models"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func fundHandler(c *gin.Context) {
 	if err := player.Fund(); err == nil {
 		c.JSON(http.StatusOK, gin.H{"Result": "Player funded succesfully"})
 	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"internalError": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"badRequest": err.Error()})
 	}
 }
 
@@ -43,7 +44,11 @@ func takeHandler(c *gin.Context) {
 	if err := player.Take(); err == nil {
 		c.JSON(http.StatusOK, gin.H{"Result": "Player's points were taken succesfully"})
 	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"internalError": err.Error()})
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"notFoundError": "No such player"})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"badRequest": err.Error()})
+		}
 	}
 }
 

@@ -9,8 +9,13 @@ import (
 
 func fundHandler(c *gin.Context) {
 	var player models.Player
-	err := c.Bind(&player)
-	if err != nil {
+
+	if err := c.Bind(&player); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := player.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
 		return
 	}
@@ -23,10 +28,30 @@ func fundHandler(c *gin.Context) {
 }
 
 func takeHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
+	var player models.Player
+
+	if err := c.Bind(&player); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := player.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := player.Take(); err == nil {
+		c.JSON(http.StatusOK, gin.H{"Result": "Player's points were taken succesfully"})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"internalError": err.Error()})
+	}
 }
 
 func announceTournamentHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, 1)
+}
+
+func resultTournamentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, 1)
 }
 
@@ -50,8 +75,4 @@ func resetHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"internalError": err.Error()})
 	}
-}
-
-func resultTournamentHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
 }

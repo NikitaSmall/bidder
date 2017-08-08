@@ -2,7 +2,11 @@ package models
 
 import "bidder/util"
 
-var resetQueries = []string{"DELETE FROM tournament_attendees;", "DELETE FROM tournaments;", "DELETE FROM players;"}
+var resetQueries = []string{
+	"DELETE FROM tournament_attendees;",
+	"DELETE FROM tournaments;",
+	"DELETE FROM players;",
+}
 
 // ResetDB function removes all the data from the DataBase, leaving structure.
 func ResetDB() error {

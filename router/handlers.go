@@ -35,7 +35,13 @@ func joinTournamentHandler(c *gin.Context) {
 }
 
 func balanceHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
+	playerID := c.Query("playerId")
+
+	if player, err := models.FindPlayer(playerID); err == nil {
+		c.JSON(http.StatusOK, player)
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"notFoundError": "No such player"})
+	}
 }
 
 func resetHandler(c *gin.Context) {

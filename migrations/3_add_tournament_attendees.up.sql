@@ -12,7 +12,7 @@ CREATE TABLE "public"."tournament_attendees" (
 	-- to the system. Thus I comment this `guessing` functional out.
 	-- "prize" Integer NOT NULL CHECK (prize >= 0),
 
-	"backers" Integer[] DEFAULT array[]::Integer[] NOT NULL,
+	"backers" Character Varying( 256 )[] DEFAULT array[]::Character Varying( 256 )[] NOT NULL,
  PRIMARY KEY ( "id" )
  );
 -- -------------------------------------------------------------;

@@ -53,14 +53,50 @@ func takeHandler(c *gin.Context) {
 }
 
 func announceTournamentHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
-}
+	var tournament models.Tournament
 
-func resultTournamentHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
+	if err := c.Bind(&tournament); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := tournament.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := tournament.Announce(); err == nil {
+		c.JSON(http.StatusOK, gin.H{"Result": "Tournament announced succesfully"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"badRequest": err.Error()})
+	}
 }
 
 func joinTournamentHandler(c *gin.Context) {
+	var attendee models.TournamentAttendee
+
+	if err := c.Bind(&attendee); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := attendee.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := attendee.JoinTournament(); err == nil {
+		c.JSON(http.StatusOK, gin.H{"Result": "Attendee joined succesfully"})
+	} else {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"notFoundError": err.Error()})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"badRequest": err.Error()})
+		}
+	}
+}
+
+func resultTournamentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, 1)
 }
 

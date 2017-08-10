@@ -2,6 +2,7 @@ package models
 
 import (
 	"bidder/util"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -47,7 +48,7 @@ func (ta *TournamentAttendee) JoinTournament() error {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`SELECT deposit, finished FROM tournaments WHERE id = $1`)
+	stmt, err := tx.Prepare(`SELECT deposit, finished FROM tournaments WHERE id = $1 FOR UPDATE;`)
 	if err != nil {
 		return err
 	}
@@ -58,6 +59,19 @@ func (ta *TournamentAttendee) JoinTournament() error {
 	if err := stmt.QueryRow(ta.TournamentID).Scan(&deposit, &finished); err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	stmt, err = tx.Prepare(`SELECT player_id FROM tournament_attendees WHERE player_id = $1 AND tournament_id = $2 FOR UPDATE;`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+
+	var playerID string
+	if err := stmt.QueryRow(ta.PlayerID, ta.TournamentID).Scan(&playerID); err != sql.ErrNoRows {
+		tx.Rollback()
+		return errors.New("Cannot join tournament second time")
 	}
 
 	if finished {
@@ -71,7 +85,7 @@ func (ta *TournamentAttendee) JoinTournament() error {
 	}
 
 	playerIDs := fmt.Sprintf(`{%s}`, strings.Join(ids, `, `))
-	stmt, err = tx.Prepare(`SELECT player_id, points FROM players WHERE player_id = ANY($1);`)
+	stmt, err = tx.Prepare(`SELECT player_id, points FROM players WHERE player_id = ANY($1) FOR UPDATE;`)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -105,7 +119,8 @@ func (ta *TournamentAttendee) JoinTournament() error {
 	}
 	defer stmt.Close()
 
-	if _, err = stmt.Exec(deposit, playerIDs); err != nil {
+	priceToPay := deposit / len(players)
+	if _, err = stmt.Exec(priceToPay, playerIDs); err != nil {
 		tx.Rollback()
 		return err
 	}

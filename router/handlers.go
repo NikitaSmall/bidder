@@ -97,7 +97,27 @@ func joinTournamentHandler(c *gin.Context) {
 }
 
 func resultTournamentHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, 1)
+	var result models.TournamentResult
+
+	if err := c.BindJSON(&result); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := result.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"validationError": err.Error()})
+		return
+	}
+
+	if err := result.Finish(); err == nil {
+		c.JSON(http.StatusOK, gin.H{"Result": "Tournament finished succesfully"})
+	} else {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"notFoundError": err.Error()})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"badRequest": err.Error()})
+		}
+	}
 }
 
 func balanceHandler(c *gin.Context) {

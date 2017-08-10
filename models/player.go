@@ -54,7 +54,7 @@ func (p *Player) Take() error {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`SELECT points FROM players WHERE player_id = $1`)
+	stmt, err := tx.Prepare(`SELECT points FROM players WHERE player_id = $1 FOR UPDATE;`)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (p *Player) Take() error {
 		return err
 	}
 
-	stmt, err = tx.Prepare(`UPDATE players SET points = $1 WHERE player_id = $2`)
+	stmt, err = tx.Prepare(`UPDATE players SET points = $1 WHERE player_id = $2;`)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func FindPlayer(playerID string) (*Player, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`SELECT * FROM players WHERE player_id = $1`)
+	stmt, err := tx.Prepare(`SELECT * FROM players WHERE player_id = $1;`)
 	if err != nil {
 		return nil, err
 	}

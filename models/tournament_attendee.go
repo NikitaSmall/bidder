@@ -13,7 +13,7 @@ type TournamentAttendee struct {
 	Backers      []string `form:"backerId"`
 }
 
-// Validate function checks the params before execute actual request
+// Validate method checks the params before execute actual request
 func (ta *TournamentAttendee) Validate() error {
 	if len(ta.PlayerID) == 0 {
 		return errors.New("PlayerID should not be empty!")

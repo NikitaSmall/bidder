@@ -12,7 +12,7 @@ type Player struct {
 	Points   int    `form:"points" json:"balance" binding:"required"`
 }
 
-// Validate function checks the params before execute actual request
+// Validate method checks the params before execute actual request
 func (p *Player) Validate() error {
 	if len(p.PlayerID) == 0 {
 		return errors.New("PlayerID should not be empty!")
@@ -25,21 +25,15 @@ func (p *Player) Validate() error {
 	return nil
 }
 
-// Fund function tries to create new player or update the existing one with some points
+// Fund method tries to create new player or update the existing one with some points
 func (p *Player) Fund() error {
 	tx, err := util.DBConnect.Begin()
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO players (player_id, points) VALUES ($1, $2)
-                           ON CONFLICT(player_id) DO UPDATE SET points = players.points + EXCLUDED.points;`)
+	err = p.fundPlayer(tx)
 	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(p.PlayerID, p.Points); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -75,20 +69,28 @@ func FindPlayer(playerID string) (*Player, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`SELECT player_id, points FROM players WHERE player_id = $1;`)
+	player, err := findPlayer(tx, playerID)
 	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	var id string
-	var points int
-	if err := stmt.QueryRow(playerID).Scan(&id, &points); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	return &Player{PlayerID: id, Points: points}, tx.Commit()
+	return player, tx.Commit()
+}
+
+func (p *Player) fundPlayer(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`INSERT INTO players (player_id, points) VALUES ($1, $2)
+                           ON CONFLICT(player_id) DO UPDATE SET points = players.points + EXCLUDED.points;`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(p.PlayerID, p.Points); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Player) checkPoints(tx *sql.Tx) error {
@@ -122,4 +124,19 @@ func (p *Player) substractPoints(tx *sql.Tx) error {
 	}
 
 	return nil
+}
+
+func findPlayer(tx *sql.Tx, playerID string) (*Player, error) {
+	stmt, err := tx.Prepare(`SELECT player_id, points FROM players WHERE player_id = $1;`)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	player := new(Player)
+	if err := stmt.QueryRow(playerID).Scan(&player.PlayerID, &player.Points); err != nil {
+		return nil, err
+	}
+
+	return player, nil
 }

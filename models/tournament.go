@@ -26,7 +26,7 @@ type Winner struct {
 	Prize    int    `form:"prize" json:"prize" binding:"required"`
 }
 
-// Validate function checks the params before execute actual request
+// Validate method checks the params before execute actual request
 func (t *Tournament) Validate() error {
 	if t.TournamentID <= 0 {
 		return errors.New("TournamentID should be positive number!")
@@ -39,20 +39,15 @@ func (t *Tournament) Validate() error {
 	return nil
 }
 
-// Announce function tries to create new tournament in the DataBase
+// Announce method tries to create new tournament in the DataBase
 func (t *Tournament) Announce() error {
 	tx, err := util.DBConnect.Begin()
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`INSERT INTO tournaments (id, deposit, finished) VALUES ($1, $2, $3);`)
+	err = t.newTournament(tx)
 	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(t.TournamentID, t.Deposit, t.Finished); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -60,7 +55,21 @@ func (t *Tournament) Announce() error {
 	return tx.Commit()
 }
 
-// Validate function checks the params before execute actual request
+func (t *Tournament) newTournament(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`INSERT INTO tournaments (id, deposit, finished) VALUES ($1, $2, $3);`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(t.TournamentID, t.Deposit, t.Finished); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Validate method checks the params before execute actual request
 func (tr *TournamentResult) Validate() error {
 	if len(tr.TournamentID) == 0 {
 		return errors.New("TournamentID should not empty!")
@@ -74,7 +83,7 @@ func (tr *TournamentResult) Validate() error {
 }
 
 // Finish method tries to finish the tournament and pay the prize for every player
-// As this method encapsulates complicated logic, it is splitted on simplier methods
+// As this method has more than one database call, each call is in it's own method.
 func (tr *TournamentResult) Finish() error {
 	tx, err := util.DBConnect.Begin()
 	if err != nil {

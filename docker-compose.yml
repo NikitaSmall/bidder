@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=toor
       - POSTGRES_DB=bidder_db
   web:
-    build: .
+    image: nikitasmall/bidder:latest
     command: ["./waiter.sh", "db:5432", "--", "/go/bin/bidder"]
     depends_on:
       - db

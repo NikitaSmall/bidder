@@ -51,20 +51,17 @@ func (ta *TournamentAttendee) JoinTournament() error {
 		return err
 	}
 
-	err = ta.checkUniqAttendee(tx)
-	if err != nil {
+	if err = ta.checkUniqAttendee(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = ta.updateAttendeeProfiles(tx, deposit)
-	if err != nil {
+	if err = ta.updateAttendeeProfiles(tx, deposit); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = ta.addAttendee(tx)
-	if err != nil {
+	if err = ta.addAttendee(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -121,8 +118,8 @@ func (ta *TournamentAttendee) updateAttendeeProfiles(tx *sql.Tx, deposit int) er
 	for rows.Next() {
 		var playerID string
 		var points int
-		err = rows.Scan(&playerID, &points)
-		if err != nil {
+
+		if err = rows.Scan(&playerID, &points); err != nil {
 			return err
 		}
 

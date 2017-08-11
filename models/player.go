@@ -55,14 +55,12 @@ func (p *Player) Take() error {
 		return err
 	}
 
-	err = p.checkPoints(tx)
-	if err != nil {
+	if err = p.checkPoints(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = p.substractPoints(tx)
-	if err != nil {
+	if err = p.substractPoints(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -77,7 +75,7 @@ func FindPlayer(playerID string) (*Player, error) {
 		return nil, err
 	}
 
-	stmt, err := tx.Prepare(`SELECT * FROM players WHERE player_id = $1;`)
+	stmt, err := tx.Prepare(`SELECT player_id, points FROM players WHERE player_id = $1;`)
 	if err != nil {
 		return nil, err
 	}

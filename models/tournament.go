@@ -81,20 +81,17 @@ func (tr *TournamentResult) Finish() error {
 		return err
 	}
 
-	err = tr.checkTournament(tx)
-	if err != nil {
+	if err = tr.checkTournament(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = tr.updateWinners(tx)
-	if err != nil {
+	if err = tr.updateWinners(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	err = tr.finishTournament(tx)
-	if err != nil {
+	if err = tr.finishTournament(tx); err != nil {
 		tx.Rollback()
 		return err
 	}

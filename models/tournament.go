@@ -2,9 +2,8 @@ package models
 
 import (
 	"bidder/util"
+	"database/sql"
 	"errors"
-	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -75,12 +74,35 @@ func (tr *TournamentResult) Validate() error {
 }
 
 // Finish method tries to finish the tournament and pay the prize for every player
+// As this method encapsulates complicated logic, it is splitted on simplier methods
 func (tr *TournamentResult) Finish() error {
 	tx, err := util.DBConnect.Begin()
 	if err != nil {
 		return err
 	}
 
+	err = tr.checkTournament(tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tr.updateWinners(tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tr.finishTournament(tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (tr *TournamentResult) checkTournament(tx *sql.Tx) error {
 	stmt, err := tx.Prepare(`SELECT finished FROM tournaments WHERE id = $1 FOR UPDATE;`)
 	if err != nil {
 		return err
@@ -89,13 +111,20 @@ func (tr *TournamentResult) Finish() error {
 
 	var finished bool
 	if err := stmt.QueryRow(tr.TournamentID).Scan(&finished); err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	if finished {
-		tx.Rollback()
 		return errors.New("Cannot finish finished tournament")
+	}
+
+	return nil
+}
+
+func (tr *TournamentResult) updateWinners(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`UPDATE players SET points = points + $1 WHERE player_id = ANY($2);`)
+	if err != nil {
+		return err
 	}
 
 	for _, winner := range tr.Winners {
@@ -109,7 +138,6 @@ func (tr *TournamentResult) Finish() error {
 			winner.PlayerID, tr.TournamentID).Scan(&playerID, &backers)
 
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
@@ -120,36 +148,25 @@ func (tr *TournamentResult) Finish() error {
 			ids = append(strings.Split(b[1:len(b)-1], ","), playerID)
 		}
 
-		stmt, err = tx.Prepare(`UPDATE players SET points = points + $1 WHERE player_id = ANY($2);`)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		var requestIDs []string
-		for _, id := range ids {
-			requestIDs = append(requestIDs, strconv.Quote(id))
-		}
-
-		prize := winner.Prize / len(requestIDs)
-		playerIDs := fmt.Sprintf(`{%s}`, strings.Join(requestIDs, `, `))
-
+		prize := winner.Prize / len(ids)
+		playerIDs := preparePostgresArray(ids)
 		if _, err = stmt.Exec(prize, playerIDs); err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
 
-	stmt, err = tx.Prepare(`UPDATE tournaments SET finished = true WHERE id = $1;`)
+	return nil
+}
+
+func (tr *TournamentResult) finishTournament(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`UPDATE tournaments SET finished = true WHERE id = $1;`)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	if _, err = stmt.Exec(tr.TournamentID); err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	return tx.Commit()
+	return nil
 }

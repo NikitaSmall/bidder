@@ -2,6 +2,7 @@ package models
 
 import (
 	"bidder/util"
+	"database/sql"
 	"errors"
 )
 
@@ -46,37 +47,21 @@ func (p *Player) Fund() error {
 	return tx.Commit()
 }
 
-// Take function removes specified number of points from the player
-// if the number of points should be negative, that player gets zero points instead.
+// Take method removes specified number of points from the player
+// As this method has more than one database call, every call is in it's own method
 func (p *Player) Take() error {
 	tx, err := util.DBConnect.Begin()
 	if err != nil {
 		return err
 	}
 
-	stmt, err := tx.Prepare(`SELECT points FROM players WHERE player_id = $1 FOR UPDATE;`)
+	err = p.checkPoints(tx)
 	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	var currentPoints int
-	if err := stmt.QueryRow(p.PlayerID).Scan(&currentPoints); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	stmt, err = tx.Prepare(`UPDATE players SET points = $1 WHERE player_id = $2;`)
-	if err != nil {
-		return err
-	}
-
-	if currentPoints-p.Points < 0 {
-		tx.Rollback()
-		return errors.New("Can't set points number to negative")
-	}
-
-	_, err = stmt.Exec(currentPoints-p.Points, p.PlayerID)
+	err = p.substractPoints(tx)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -100,11 +85,43 @@ func FindPlayer(playerID string) (*Player, error) {
 
 	var id string
 	var points int
-
 	if err := stmt.QueryRow(playerID).Scan(&id, &points); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
 	return &Player{PlayerID: id, Points: points}, tx.Commit()
+}
+
+func (p *Player) checkPoints(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`SELECT points FROM players WHERE player_id = $1 FOR UPDATE;`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	var currentPoints int
+	if err := stmt.QueryRow(p.PlayerID).Scan(&currentPoints); err != nil {
+		return err
+	}
+
+	if currentPoints-p.Points < 0 {
+		return errors.New("Can't set points number to negative")
+	}
+
+	return nil
+}
+
+func (p *Player) substractPoints(tx *sql.Tx) error {
+	stmt, err := tx.Prepare(`UPDATE players SET points = points - $1 WHERE player_id = $2;`)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(p.Points, p.PlayerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

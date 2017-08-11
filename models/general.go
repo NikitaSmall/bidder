@@ -1,6 +1,11 @@
 package models
 
-import "bidder/util"
+import (
+	"bidder/util"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 var resetQueries = []string{
 	"DELETE FROM tournament_attendees;",
@@ -24,4 +29,13 @@ func ResetDB() error {
 	}
 
 	return tx.Commit()
+}
+
+func preparePostgresArray(array []string) string {
+	var result []string
+	for _, item := range array {
+		result = append(result, strconv.Quote(item))
+	}
+
+	return fmt.Sprintf(`{%s}`, strings.Join(result, `, `))
 }

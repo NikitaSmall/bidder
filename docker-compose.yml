@@ -3,18 +3,18 @@ services:
   db:
     image: postgres
     ports:
-      - "5432:5432"
+      - "5431:5432"
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=toor
-      - POSTGRES_DB=bidder
+      - POSTGRES_DB=bidder_db
   web:
     build: .
     command: ["./waiter.sh", "db:5432", "--", "/go/bin/bidder"]
     depends_on:
       - db
     ports:
-      - "8080:8080"
+      - "3000:8080"
     environment:
       - GIN_MODE=release
-      - POSTGRES=postgres://root:toor@db:5432/bidder?sslmode=disable
+      - POSTGRES=postgres://root:toor@db:5432/bidder_db?sslmode=disable

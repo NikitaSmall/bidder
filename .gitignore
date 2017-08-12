@@ -12,4 +12,4 @@
 
 # file to keep secret data and private configuration
 .env
-main_test.go
+_main_t.go

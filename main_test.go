@@ -317,3 +317,175 @@ func TestTournamentCreation(t *testing.T) {
 		})
 	})
 }
+
+func TestTournamentJoin(t *testing.T) {
+	Convey("Test join tournament", t, func() {
+		resetDB(t)
+
+		Convey("Given I set a player P1 with 1500 points", func() {
+			getRequest(t, "/fund?playerId=P1&points=1500")
+
+			Convey("When I announce a tournament with 500 points deposit", func() {
+				getRequest(t, "/announceTournament?tournamentId=1&deposit=500")
+
+				Convey("And I join player P1 to the tournament", func() {
+					res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1")
+
+					Convey("Then I get 200 status code", func() {
+						So(res.StatusCode, ShouldEqual, 200)
+					})
+
+					Convey("Then I check player P1 balance", func() {
+						_, body := getRequest(t, "/balance?playerId=P1")
+						balanceData := parseJsonPlayerBody(t, body)
+
+						Convey("Then his balance is equal to 1000", func() {
+							So(balanceData.Balance, ShouldEqual, 1000)
+						})
+					})
+
+					Convey("When I try to join same tournament with P1 player", func() {
+						res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1")
+
+						Convey("Then I get 400 status code", func() {
+							So(res.StatusCode, ShouldEqual, 400)
+						})
+					})
+				})
+
+				Convey("And given I set player P2 with 1000 points", func() {
+					getRequest(t, "/fund?playerId=P2&points=1000")
+
+					Convey("And I join player P1 with backer P2 to the tournament", func() {
+						res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1&backerId=P2")
+
+						Convey("Then I get 200 status code", func() {
+							So(res.StatusCode, ShouldEqual, 200)
+						})
+
+						Convey("Then I check player P1 balance", func() {
+							_, body := getRequest(t, "/balance?playerId=P1")
+							balanceData := parseJsonPlayerBody(t, body)
+
+							Convey("And his balance is equal to 1250", func() {
+								So(balanceData.Balance, ShouldEqual, 1250)
+							})
+						})
+
+						Convey("Then I check player P2 balance", func() {
+							_, body := getRequest(t, "/balance?playerId=P2")
+							balanceData := parseJsonPlayerBody(t, body)
+
+							Convey("And his balance is equal to 750", func() {
+								So(balanceData.Balance, ShouldEqual, 750)
+							})
+						})
+					})
+				})
+
+				Convey("And given I set player P3 with 250 points", func() {
+					getRequest(t, "/fund?playerId=P3&points=250")
+
+					Convey("When I try to join player P3 to the tournament", func() {
+						res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P3")
+
+						Convey("Then I get 400 status code", func() {
+							So(res.StatusCode, ShouldEqual, 400)
+						})
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestTournamentResult(t *testing.T) {
+	Convey("Test result tournament", t, func() {
+		resetDB(t)
+
+		Convey("Given I set player P1 with 1000 points", func() {
+			getRequest(t, "/fund?playerId=P1&points=1000")
+
+			Convey("And I announce a tournament with deposit 500", func() {
+				getRequest(t, "/announceTournament?tournamentId=1&deposit=500")
+
+				Convey("Then I join the tournament with player P1", func() {
+					res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1")
+
+					Convey("And I get 200 status code", func() {
+						So(res.StatusCode, ShouldEqual, 200)
+					})
+
+					Convey("And When I result tournament with P1 as a winner with 1000 win", func() {
+						winner_1 := winner{PlayerId: "P1", Prize: 1000}
+						result := tournament{TournamentId: "1", Winners: []winner{winner_1}}
+
+						res, _ := postRequest(t, "/resultTournament", result)
+
+						Convey("Then I get 200 status code", func() {
+							So(res.StatusCode, ShouldEqual, 200)
+						})
+
+						Convey("Then I check player P1 balance", func() {
+							_, body := getRequest(t, "/balance?playerId=P1")
+							balanceData := parseJsonPlayerBody(t, body)
+
+							Convey("And his balance is equal to 1500", func() {
+								So(balanceData.Balance, ShouldEqual, 1500)
+							})
+						})
+
+						Convey("And when I try to result tournament second time", func() {
+							res, _ := postRequest(t, "/resultTournament", result)
+
+							Convey("Then I get 400 status code", func() {
+								So(res.StatusCode, ShouldEqual, 400)
+							})
+						})
+					})
+				})
+
+				Convey("And I set player P2 with 250 points", func() {
+					getRequest(t, "/fund?playerId=P2&points=250")
+
+					Convey("Then I join the tournament with player P1 and backer P2", func() {
+						res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1&backerId=P2")
+
+						Convey("Then I get 200 status code", func() {
+							So(res.StatusCode, ShouldEqual, 200)
+						})
+
+						Convey("And when I result tournament with P1 as a winner with 1000 win", func() {
+							winner_1 := winner{PlayerId: "P1", Prize: 1000}
+							result := tournament{TournamentId: "1", Winners: []winner{winner_1}}
+
+							res, _ := postRequest(t, "/resultTournament", result)
+
+							Convey("Then I get 200 status code", func() {
+								So(res.StatusCode, ShouldEqual, 200)
+							})
+
+							Convey("Then I check player P1 balance", func() {
+								_, body := getRequest(t, "/balance?playerId=P1")
+								balanceData := parseJsonPlayerBody(t, body)
+
+								Convey("And his balance is equal to 1250", func() {
+									So(balanceData.Balance, ShouldEqual, 1250)
+								})
+							})
+
+							Convey("Then I check player P2 balance", func() {
+								_, body := getRequest(t, "/balance?playerId=P2")
+								balanceData := parseJsonPlayerBody(t, body)
+
+								Convey("And his balance is equal to 500", func() {
+									So(balanceData.Balance, ShouldEqual, 500)
+								})
+							})
+						})
+					})
+				})
+			})
+		})
+	})
+}

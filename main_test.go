@@ -534,3 +534,52 @@ func TestConcurrentFund(t *testing.T) {
 		})
 	})
 }
+
+func TestConcurrentTake(t *testing.T) {
+	Convey("Test take endpoint concurrently", t, func() {
+		resetDB(t)
+
+		Convey("Given I set player P1 with 100 points", func() {
+			getRequest(t, "/fund?playerId=P1&points=100")
+
+			Convey("When I call take endpoint 5 times in different goroutines", func() {
+				const requestsCount = 5
+				responses := make(chan int, requestsCount)
+
+				var wg sync.WaitGroup
+				for i := 1; i <= requestsCount; i++ {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						res, _ := getRequest(t, "/take?playerId=P1&points=100")
+						responses <- res.StatusCode
+
+					}()
+				}
+				wg.Wait()
+
+				Convey("Then I count every successful response", func() {
+					successResponses := 0
+					for i := 1; i <= requestsCount; i++ {
+						if 200 == <-responses {
+							successResponses += 1
+						}
+					}
+
+					Convey("And I get 1 successful response", func() {
+						So(successResponses, ShouldEqual, 1)
+					})
+
+					Convey("And when I check player P1 balance", func() {
+						_, body := getRequest(t, "/balance?playerId=P1")
+						balanceData := parseJsonPlayerBody(t, body)
+
+						Convey("Then his balance should equal to 0", func() {
+							So(balanceData.Balance, ShouldEqual, 0)
+						})
+					})
+				})
+			})
+		})
+	})
+}

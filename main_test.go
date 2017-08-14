@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

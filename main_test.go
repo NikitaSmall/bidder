@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 	"time"
+	"sync"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -483,6 +484,50 @@ func TestTournamentResult(t *testing.T) {
 								})
 							})
 						})
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestConcurrentFund(t *testing.T) {
+	Convey("Test fund endpoint concurrently", t, func() {
+		resetDB(t)
+
+		Convey("Given I call fund endpoint 10 times in different goroutines", func() {
+			const requestsCount = 10
+			responses := make(chan int, requestsCount)
+
+			var wg sync.WaitGroup
+			for i := 1; i <= requestsCount; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					res, _ := getRequest(t, "/fund?playerId=P1&points=100")
+					responses <- res.StatusCode
+				}()
+			}
+			wg.Wait()
+
+			Convey("When I count every successful response", func() {
+				successResponses := 0
+				for i := 1; i <= requestsCount; i++ {
+					if 200 == <-responses {
+						successResponses += 1
+					}
+				}
+
+				Convey("Then I get 10 responses with 200 status code", func() {
+					So(successResponses, ShouldEqual, requestsCount)
+				})
+
+				Convey("And when I check the player's balance", func() {
+					_, body := getRequest(t, "/balance?playerId=P1")
+					balanceData := parseJsonPlayerBody(t, body)
+
+					Convey("Then his balance should equal 1000", func() {
+						So(balanceData.Balance, ShouldEqual, 1000)
 					})
 				})
 			})

@@ -13,3 +13,7 @@ For testing purposes run `docker-compose run web go test`. You should get
 the detailed report. You may run this command with `-v` flag to see details.
 (this is possible to run the tests without any database installed
 as tests are stored in the docker image [for preview purpose])
+
+### code and docker image
+Source code could be found at https://github.com/NikitaSmall/bidder;
+Docker image could be found at https://hub.docker.com/r/nikitasmall/bidder/.

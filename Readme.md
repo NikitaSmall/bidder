@@ -9,6 +9,7 @@ Just use `docker-compose up`, then reach the application at `localhost:3000` (af
 
 ## Testing
 
-For testing purposes run `docker-compose run web go test -v`. You should get
-the detailed report.
-(this is possible as tests are stored in the image [for preview purpose])
+For testing purposes run `docker-compose run web go test`. You should get
+the detailed report. You may run this command with `-v` flag to see details.
+(this is possible to run the tests without any database installed
+as tests are stored in the docker image [for preview purpose])

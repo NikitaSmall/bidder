@@ -27,17 +27,17 @@ func init() {
 // the set of helper structs and functions to avoid code duplication
 // and reduce overall code amount and complexity
 type playerBalance struct {
-	PlayerId string
+	PlayerID string
 	Balance  int
 }
 
 type winner struct {
-	PlayerId string `json:"playerId,omitempty"`
+	PlayerID string `json:"playerId,omitempty"`
 	Prize    int    `json:"prize,omitempty"`
 }
 
 type tournament struct {
-	TournamentId string   `json:"tournamentId,omitempty"`
+	TournamentID string   `json:"tournamentId,omitempty"`
 	Winners      []winner `json:"winners,omitempty"`
 }
 
@@ -51,12 +51,12 @@ func getRequest(t *testing.T, uri string) (*http.Response, string) {
 }
 
 func postRequest(t *testing.T, uri string, data interface{}) (*http.Response, string) {
-	postJson, err := json.Marshal(data)
+	postJSON, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	response, err := http.Post(HOST+uri, "application/json", bytes.NewBuffer(postJson))
+	response, err := http.Post(HOST+uri, "application/json", bytes.NewBuffer(postJSON))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func getResponceBody(t *testing.T, response *http.Response) string {
 	return string(body)
 }
 
-func parseJsonPlayerBody(t *testing.T, body string) playerBalance {
+func parseJSONPlayerBody(t *testing.T, body string) playerBalance {
 	var data playerBalance
 
 	if err := json.Unmarshal([]byte(body), &data); err != nil {
@@ -117,7 +117,7 @@ func TestPlayerBalance(t *testing.T) {
 
 			Convey("When I call that player's balance", func() {
 				res, body := getRequest(t, "/balance?playerId=P1")
-				balanceData := parseJsonPlayerBody(t, body)
+				balanceData := parseJSONPlayerBody(t, body)
 
 				Convey("Then I get 200 status code", func() {
 					So(res.StatusCode, ShouldEqual, 200)
@@ -144,7 +144,7 @@ func TestPlayerFund(t *testing.T) {
 
 			Convey("When I get his balance", func() {
 				res, body := getRequest(t, "/balance?playerId=P2")
-				balanceData := parseJsonPlayerBody(t, body)
+				balanceData := parseJSONPlayerBody(t, body)
 
 				Convey("Then I get 200 status code", func() {
 					So(res.StatusCode, ShouldEqual, 200)
@@ -155,18 +155,18 @@ func TestPlayerFund(t *testing.T) {
 				})
 
 				Convey("And his player ID is equal P2", func() {
-					So(balanceData.PlayerId, ShouldEqual, "P2")
+					So(balanceData.PlayerID, ShouldEqual, "P2")
 				})
 			})
 		})
 
-		Convey("When I fund existing user with playerID P3 and 200 points and 500 points", func() {
+		Convey("When I fund existing user with PlayerID P3 and 200 points and 500 points", func() {
 			getRequest(t, "/fund?playerId=P3&points=200")
 			getRequest(t, "/fund?playerId=P3&points=500")
 
 			Convey("When I get his balance", func() {
 				res, body := getRequest(t, "/balance?playerId=P3")
-				balanceData := parseJsonPlayerBody(t, body)
+				balanceData := parseJSONPlayerBody(t, body)
 
 				Convey("Then I get 200 status code", func() {
 					So(res.StatusCode, ShouldEqual, 200)
@@ -177,7 +177,7 @@ func TestPlayerFund(t *testing.T) {
 				})
 
 				Convey("And his player ID is equal P3", func() {
-					So(balanceData.PlayerId, ShouldEqual, "P3")
+					So(balanceData.PlayerID, ShouldEqual, "P3")
 				})
 			})
 		})
@@ -192,7 +192,7 @@ func TestPlayerFund(t *testing.T) {
 
 			Convey("When I get his balance", func() {
 				res, body := getRequest(t, "/balance?playerId=P4")
-				balanceData := parseJsonPlayerBody(t, body)
+				balanceData := parseJSONPlayerBody(t, body)
 
 				Convey("Then I get 200 status code", func() {
 					So(res.StatusCode, ShouldEqual, 200)
@@ -203,7 +203,7 @@ func TestPlayerFund(t *testing.T) {
 				})
 
 				Convey("And his player ID is equal P4", func() {
-					So(balanceData.PlayerId, ShouldEqual, "P4")
+					So(balanceData.PlayerID, ShouldEqual, "P4")
 				})
 			})
 		})
@@ -234,7 +234,7 @@ func TestPlayerTake(t *testing.T) {
 
 				Convey("And when I check player P1 balance", func() {
 					_, body := getRequest(t, "/balance?playerId=P1")
-					balanceData := parseJsonPlayerBody(t, body)
+					balanceData := parseJSONPlayerBody(t, body)
 
 					Convey("Then his balance is equal to 100", func() {
 						So(balanceData.Balance, ShouldEqual, 100)
@@ -307,7 +307,7 @@ func TestTournamentCreation(t *testing.T) {
 
 					Convey("And when I check player P1 balance", func() {
 						_, body := getRequest(t, "/balance?playerId=P1")
-						balanceData := parseJsonPlayerBody(t, body)
+						balanceData := parseJSONPlayerBody(t, body)
 
 						Convey("Then his balance is equal to 1000", func() {
 							So(balanceData.Balance, ShouldEqual, 1000)
@@ -338,7 +338,7 @@ func TestTournamentJoin(t *testing.T) {
 
 					Convey("Then I check player P1 balance", func() {
 						_, body := getRequest(t, "/balance?playerId=P1")
-						balanceData := parseJsonPlayerBody(t, body)
+						balanceData := parseJSONPlayerBody(t, body)
 
 						Convey("Then his balance is equal to 1000", func() {
 							So(balanceData.Balance, ShouldEqual, 1000)
@@ -366,7 +366,7 @@ func TestTournamentJoin(t *testing.T) {
 
 						Convey("Then I check player P1 balance", func() {
 							_, body := getRequest(t, "/balance?playerId=P1")
-							balanceData := parseJsonPlayerBody(t, body)
+							balanceData := parseJSONPlayerBody(t, body)
 
 							Convey("And his balance is equal to 1250", func() {
 								So(balanceData.Balance, ShouldEqual, 1250)
@@ -375,7 +375,7 @@ func TestTournamentJoin(t *testing.T) {
 
 						Convey("Then I check player P2 balance", func() {
 							_, body := getRequest(t, "/balance?playerId=P2")
-							balanceData := parseJsonPlayerBody(t, body)
+							balanceData := parseJSONPlayerBody(t, body)
 
 							Convey("And his balance is equal to 750", func() {
 								So(balanceData.Balance, ShouldEqual, 750)
@@ -418,8 +418,8 @@ func TestTournamentResult(t *testing.T) {
 					})
 
 					Convey("And When I result tournament with P1 as a winner with 1000 win", func() {
-						winner_1 := winner{PlayerId: "P1", Prize: 1000}
-						result := tournament{TournamentId: "1", Winners: []winner{winner_1}}
+						winner1 := winner{PlayerID: "P1", Prize: 1000}
+						result := tournament{TournamentID: "1", Winners: []winner{winner1}}
 
 						res, _ := postRequest(t, "/resultTournament", result)
 
@@ -429,7 +429,7 @@ func TestTournamentResult(t *testing.T) {
 
 						Convey("Then I check player P1 balance", func() {
 							_, body := getRequest(t, "/balance?playerId=P1")
-							balanceData := parseJsonPlayerBody(t, body)
+							balanceData := parseJSONPlayerBody(t, body)
 
 							Convey("And his balance is equal to 1500", func() {
 								So(balanceData.Balance, ShouldEqual, 1500)
@@ -457,8 +457,8 @@ func TestTournamentResult(t *testing.T) {
 						})
 
 						Convey("And when I result tournament with P1 as a winner with 1000 win", func() {
-							winner_1 := winner{PlayerId: "P1", Prize: 1000}
-							result := tournament{TournamentId: "1", Winners: []winner{winner_1}}
+							winner1 := winner{PlayerID: "P1", Prize: 1000}
+							result := tournament{TournamentID: "1", Winners: []winner{winner1}}
 
 							res, _ := postRequest(t, "/resultTournament", result)
 
@@ -468,7 +468,7 @@ func TestTournamentResult(t *testing.T) {
 
 							Convey("Then I check player P1 balance", func() {
 								_, body := getRequest(t, "/balance?playerId=P1")
-								balanceData := parseJsonPlayerBody(t, body)
+								balanceData := parseJSONPlayerBody(t, body)
 
 								Convey("And his balance is equal to 1250", func() {
 									So(balanceData.Balance, ShouldEqual, 1250)
@@ -477,7 +477,7 @@ func TestTournamentResult(t *testing.T) {
 
 							Convey("Then I check player P2 balance", func() {
 								_, body := getRequest(t, "/balance?playerId=P2")
-								balanceData := parseJsonPlayerBody(t, body)
+								balanceData := parseJSONPlayerBody(t, body)
 
 								Convey("And his balance is equal to 500", func() {
 									So(balanceData.Balance, ShouldEqual, 500)
@@ -514,7 +514,7 @@ func TestConcurrentFund(t *testing.T) {
 				successResponses := 0
 				for i := 1; i <= requestsCount; i++ {
 					if 200 == <-responses {
-						successResponses += 1
+						successResponses++
 					}
 				}
 
@@ -524,7 +524,7 @@ func TestConcurrentFund(t *testing.T) {
 
 				Convey("And when I check the player's balance", func() {
 					_, body := getRequest(t, "/balance?playerId=P1")
-					balanceData := parseJsonPlayerBody(t, body)
+					balanceData := parseJSONPlayerBody(t, body)
 
 					Convey("Then his balance should equal 1000", func() {
 						So(balanceData.Balance, ShouldEqual, 1000)
@@ -562,7 +562,7 @@ func TestConcurrentTake(t *testing.T) {
 					successResponses := 0
 					for i := 1; i <= requestsCount; i++ {
 						if 200 == <-responses {
-							successResponses += 1
+							successResponses++
 						}
 					}
 
@@ -572,10 +572,181 @@ func TestConcurrentTake(t *testing.T) {
 
 					Convey("And when I check player P1 balance", func() {
 						_, body := getRequest(t, "/balance?playerId=P1")
-						balanceData := parseJsonPlayerBody(t, body)
+						balanceData := parseJSONPlayerBody(t, body)
 
 						Convey("Then his balance should equal to 0", func() {
 							So(balanceData.Balance, ShouldEqual, 0)
+						})
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestConcurrentTournamentAnnounce(t *testing.T) {
+	Convey("Test announceTournament endpoint concurrently", t, func() {
+		resetDB(t)
+
+		Convey("When I call announceTournament endpoint 5 times in different goroutines", func() {
+			const requestsCount = 5
+			responses := make(chan int, requestsCount)
+
+			var wg sync.WaitGroup
+			for i := 1; i <= requestsCount; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					res, _ := getRequest(t, "/announceTournament?tournamentId=1&deposit=500")
+					responses <- res.StatusCode
+
+				}()
+			}
+			wg.Wait()
+
+			Convey("Then I count every successful response", func() {
+				successResponses := 0
+				for i := 1; i <= requestsCount; i++ {
+					if 200 == <-responses {
+						successResponses++
+					}
+				}
+
+				Convey("And I get 1 successful response", func() {
+					So(successResponses, ShouldEqual, 1)
+				})
+			})
+		})
+	})
+}
+
+func TestConcurrentTournamentJoin(t *testing.T) {
+	Convey("Test joinTournament endpoint concurrently", t, func() {
+		resetDB(t)
+
+		Convey("Given I set player P1 with 1000 points", func() {
+			getRequest(t, "/fund?playerId=P1&points=1000")
+
+			Convey("And given I announce tournament with 500 points deposit", func() {
+				getRequest(t, "/announceTournament?tournamentId=1&deposit=500")
+
+				Convey("When I call joinTournament endpoint 5 times in different goroutines", func() {
+					const requestsCount = 5
+					responses := make(chan int, requestsCount)
+
+					var wg sync.WaitGroup
+					for i := 1; i <= requestsCount; i++ {
+						wg.Add(1)
+						go func() {
+							defer wg.Done()
+							res, _ := getRequest(t, "/joinTournament?tournamentId=1&playerId=P1")
+							responses <- res.StatusCode
+
+						}()
+					}
+					wg.Wait()
+
+					Convey("Then I count every successful response", func() {
+						successResponses := 0
+						for i := 1; i <= requestsCount; i++ {
+							if 200 == <-responses {
+								successResponses++
+							}
+						}
+
+						Convey("And I get 1 successful response", func() {
+							So(successResponses, ShouldEqual, 1)
+						})
+
+						Convey("And when I check player P1 balance", func() {
+							_, body := getRequest(t, "/balance?playerId=P1")
+							balanceData := parseJSONPlayerBody(t, body)
+
+							Convey("Then his balance should equal to 500", func() {
+								So(balanceData.Balance, ShouldEqual, 500)
+							})
+						})
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestConcurrentTournamentResult(t *testing.T) {
+	Convey("Test result endpoint concurrently", t, func() {
+		resetDB(t)
+
+		Convey("Given I set players P1, P2, P3", func() {
+			getRequest(t, "/fund?playerId=P1&points=2000")
+			getRequest(t, "/fund?playerId=P2&points=2000")
+			getRequest(t, "/fund?playerId=P3&points=1000")
+
+			Convey("And given I announce tournament with 1000 points deposit", func() {
+				getRequest(t, "/announceTournament?tournamentId=1&deposit=1000")
+
+				Convey("And given I join those players to the tournament", func() {
+					getRequest(t, "/joinTournament?tournamentId=1&playerId=P1")
+					getRequest(t, "/joinTournament?tournamentId=1&playerId=P2&backerId=P3")
+
+					Convey("When I call resultTournament endpoint 5 times in different goroutines", func() {
+						winner1 := winner{PlayerID: "P1", Prize: 1000}
+						winner2 := winner{PlayerID: "P2", Prize: 500}
+						result := tournament{TournamentID: "1", Winners: []winner{winner1, winner2}}
+
+						const requestsCount = 5
+						responses := make(chan int, requestsCount)
+
+						var wg sync.WaitGroup
+						for i := 1; i <= requestsCount; i++ {
+							wg.Add(1)
+							go func() {
+								defer wg.Done()
+								res, _ := postRequest(t, "/resultTournament", result)
+								responses <- res.StatusCode
+
+							}()
+						}
+						wg.Wait()
+
+						Convey("Then I count every successful response", func() {
+							successResponses := 0
+							for i := 1; i <= requestsCount; i++ {
+								if 200 == <-responses {
+									successResponses++
+								}
+							}
+
+							Convey("And I get 1 successful response", func() {
+								So(successResponses, ShouldEqual, 1)
+							})
+
+							Convey("And when I check player P1 balance", func() {
+								_, body := getRequest(t, "/balance?playerId=P1")
+								balanceData := parseJSONPlayerBody(t, body)
+
+								Convey("Then his balance should equal to 2000", func() {
+									So(balanceData.Balance, ShouldEqual, 2000)
+								})
+							})
+
+							Convey("And when I check player P2 balance", func() {
+								_, body := getRequest(t, "/balance?playerId=P2")
+								balanceData := parseJSONPlayerBody(t, body)
+
+								Convey("Then his balance should equal to 1750", func() {
+									So(balanceData.Balance, ShouldEqual, 1750)
+								})
+							})
+
+							Convey("And when I check player P3 balance", func() {
+								_, body := getRequest(t, "/balance?playerId=P3")
+								balanceData := parseJSONPlayerBody(t, body)
+
+								Convey("Then his balance should equal to 750", func() {
+									So(balanceData.Balance, ShouldEqual, 750)
+								})
+							})
 						})
 					})
 				})
